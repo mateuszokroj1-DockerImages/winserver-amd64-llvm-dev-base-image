@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/windows/servercore:ltsc2025
 
 USER ContainerAdministrator
 
-SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'Continue'; $verbosePreference='Continue';"]
+SHELL ["powershell", "-Command"]
 
 ADD https://community.chocolatey.org/install.ps1 choco-install.ps1
 

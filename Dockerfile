@@ -28,10 +28,7 @@ RUN $packages = @( `
         @{ Name = 'cmake'; Version = '4.5.0' }, `
         @{ Name = 'llvm'; Version = '23.1.3' }, `
         @{ Name = 'python'; Version = '3.15.2' }, `
-        @{ Name = 'openjdk'; Version = '27.0.1.3' }, `
         @{ Name = 'msys2'; Version = '20260927.0.0' }, `
-        @{ Name = 'nodejs'; Version = '26.13.1' }, `
-        @{ Name = 'docker-cli'; Version = '29.9.3' } `
     ); `
     foreach ($package in $packages) { `
         $installed = $false; `

@@ -40,11 +40,14 @@ RUN $packages = @( `
         if (-not $installed) { throw ('Chocolatey installation failed for ' + $package.Name) } `
     }
 
+ENV VCPKG_ROOT=C:\Users\ContainerUser\vcpkg
+
+RUN $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine'); `
+    if ([string]::IsNullOrWhiteSpace($machinePath)) { throw 'Windows machine PATH is not set' }; `
+    [Environment]::SetEnvironmentVariable('Path', ($env:VCPKG_ROOT + ';' + $machinePath), 'Machine')
+
 USER ContainerUser
 WORKDIR C:\Users\ContainerUser
-
-ENV VCPKG_ROOT=C:\Users\ContainerUser\vcpkg
-ENV PATH="${VCPKG_ROOT};${PATH}"
 
 RUN git clone --quiet --depth 1 https://github.com/microsoft/vcpkg.git $env:VCPKG_ROOT; `
     if ($LASTEXITCODE -ne 0) { throw 'vcpkg clone failed' }; `

@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Docker build
-        run: docker build -t ${{ env.tag }} .
+        run: docker build --pull --tag ${{ env.tag }} .
 
       - name: Analyze with Docker Scout
-        run: docker scout --cves ${{ env.tag }}
+        run: docker scout cves --only-severity critical,high --exit-code ${{ env.tag }}

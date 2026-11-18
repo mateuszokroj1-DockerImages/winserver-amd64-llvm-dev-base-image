@@ -19,7 +19,7 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
-    runs-on: windows-latest
+    runs-on: windows-2025
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -27,6 +27,29 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v4
       
+      - name: Ensure Docker Engine is running
+        run: |
+          $service = Get-Service -Name docker -ErrorAction Stop
+          if ($service.Status -ne 'Running') {
+            Start-Service -Name docker
+          }
+
+          $deadline = (Get-Date).AddSeconds(60)
+          do {
+            $dockerInfo = docker info 2>&1
+            if ($LASTEXITCODE -eq 0) {
+              docker version
+              if ($LASTEXITCODE -ne 0) { throw 'Docker version check failed' }
+              Write-Host 'Docker Engine is ready.'
+              exit 0
+            }
+            Start-Sleep -Seconds 2
+          } while ((Get-Date) -lt $deadline)
+
+          Write-Error ($dockerInfo -join [Environment]::NewLine)
+          throw 'Docker Engine did not become ready within 60 seconds.'
+        shell: powershell
+
       - name: Docker build
         run: docker build --pull --tag ${{ env.tag }} .
 

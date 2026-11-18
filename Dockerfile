@@ -2,6 +2,12 @@ FROM mcr.microsoft.com/windows/servercore:ltsc2025
 
 USER ContainerAdministrator
 
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'Continue'; $verbosePreference='Continue';"]
+
+ADD https://community.chocolatey.org/install.ps1 choco-install.ps1
+
+RUN ./choco-install.ps1
+
 RUN choco install git
 RUN choco install git-lfs
 RUN choco install dotnet-11.0-sdk
@@ -13,6 +19,8 @@ RUN choco install python
 RUN choco install openjdk
 RUN choco install msys2
 RUN choco install nodejs
+RUN choco install docker-engine
+RUN choco install docker-cli
 
 USER ContainerUser
 WORKDIR $HOME

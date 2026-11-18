@@ -28,7 +28,7 @@ RUN $packages = @( `
         @{ Name = 'cmake'; Version = '4.5.0' }, `
         @{ Name = 'llvm'; Version = '23.1.3' }, `
         @{ Name = 'python'; Version = '3.15.2' }, `
-        @{ Name = 'msys2'; Version = '20260927.0.0' }, `
+        @{ Name = 'msys2'; Version = '20260927.0.0' } `
     ); `
     foreach ($package in $packages) { `
         $installed = $false; `

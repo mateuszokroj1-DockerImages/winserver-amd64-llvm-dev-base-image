@@ -7,6 +7,7 @@ SHELL ["powershell", "-Command"]
 ADD https://community.chocolatey.org/install.ps1 choco-install.ps1
 
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; ./choco-install.ps1
+RUN choco feature enable -n allowGlobalConfirmation
 
 RUN choco install git.install
 RUN choco install git-lfs

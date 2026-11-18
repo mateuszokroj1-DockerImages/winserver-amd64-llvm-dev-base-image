@@ -8,7 +8,7 @@ ADD https://community.chocolatey.org/install.ps1 choco-install.ps1
 
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; ./choco-install.ps1
 
-RUN choco install git
+RUN choco install git.install
 RUN choco install git-lfs
 RUN choco install dotnet-11.0-sdk
 RUN choco install rust

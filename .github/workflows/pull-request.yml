@@ -25,7 +25,24 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Git checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.1.0
+
+      - name: Reclaim unused Visual Studio disk space
+        run: |
+          $visualStudioRoot = 'C:\Program Files\Microsoft Visual Studio'
+          if (Test-Path -LiteralPath $visualStudioRoot) {
+            Get-ChildItem -LiteralPath $visualStudioRoot -Directory | ForEach-Object {
+              $installation = Join-Path $_.FullName 'Enterprise'
+              if (Test-Path -LiteralPath $installation) {
+                Write-Host "Removing unused host Visual Studio installation: $installation"
+                Remove-Item -LiteralPath $installation -Recurse -Force
+              }
+            }
+          }
+
+          $freeSpace = (Get-PSDrive -Name C).Free
+          Write-Host ('Available C: space after cleanup: {0:N1} GiB' -f ($freeSpace / 1GB))
+        shell: powershell
       
       - name: Ensure Docker Engine is running
         run: |

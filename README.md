@@ -36,12 +36,12 @@ docker build --pull -t mateuszokroj1/winserver-amd64-llvm-dev-base:latest .
 | CMake | 4.5.0 |
 | LLVM | 23.1.3 |
 | Python | 3.15.2 |
-| vcpkg | Revision `2ebb714221ad4e482e596d64c129f63fbbfb3fd5` |
+| vcpkg | Microsoft's default branch, cloned at build time |
 
 Chocolatey package versions are pinned in the Dockerfile and installed with
 checksum verification. Failed package installations are retried up to three
-times. The vcpkg checkout is checked against its pinned revision before
-bootstrapping.
+times. vcpkg is cloned from Microsoft's default branch and bootstrapped during
+the image build, so its revision can change between builds.
 
 ## Usage
 

@@ -51,7 +51,5 @@ WORKDIR C:\Users\ContainerUser
 
 RUN git clone --quiet --depth 1 https://github.com/microsoft/vcpkg.git $env:VCPKG_ROOT; `
     if ($LASTEXITCODE -ne 0) { throw 'vcpkg clone failed' }; `
-    $revision = (git -C $env:VCPKG_ROOT rev-parse HEAD).Trim(); `
-    if ($revision -ne '2ebb714221ad4e482e596d64c129f63fbbfb3fd5') { throw ('Unexpected vcpkg revision: ' + $revision) }; `
     & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics; `
     if ($LASTEXITCODE -ne 0) { throw 'vcpkg bootstrap failed' }

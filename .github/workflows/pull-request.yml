@@ -71,4 +71,12 @@ jobs:
         run: docker build --pull --tag ${{ env.tag }} .
 
       - name: Analyze with Docker Scout
-        run: docker scout cves --only-severity critical,high --exit-code ${{ env.tag }}
+        uses: docker/scout-action@v1.26.0
+        with:
+          command: cves
+          image: ${{ env.tag }}
+          only-severities: critical,high
+          exit-code: true
+          dockerhub-user: ${{ secrets.DOCKER_LOGIN }}
+          dockerhub-password: ${{ secrets.DOCKER_PASS }}
+          write-comment: false

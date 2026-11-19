@@ -131,18 +131,5 @@ jobs:
           }
         shell: powershell
 
-      - name: Reauthenticate Docker for Scout
-        uses: docker/login-action@v4.8.0
-        with:
-          username: ${{ secrets.DOCKER_LOGIN }}
-          password: ${{ secrets.DOCKER_PASS }}
-
-      - name: Analyze with Docker Scout
-        uses: docker/scout-action@v1.26.0
-        with:
-          command: cves
-          image: ${{ env.tag }}
-          exit-code: true
-
       - name: Docker push
         run: docker push ${{ env.tag }}

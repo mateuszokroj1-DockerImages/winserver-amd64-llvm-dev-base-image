@@ -124,12 +124,18 @@ jobs:
       - name: Free Docker build cache before Scout
         run: |
           docker builder prune --all --force
-          docker system prune --all --volumes --force
+          docker system prune --volumes --force
           foreach ($driveName in @('C', 'D')) {
             $freeSpace = (Get-PSDrive -Name $driveName).Free
             Write-Host ('Available {0}: space before Scout: {1:N1} GiB' -f $driveName, ($freeSpace / 1GB))
           }
         shell: powershell
+
+      - name: Reauthenticate Docker for Scout
+        uses: docker/login-action@v4.8.0
+        with:
+          username: ${{ secrets.DOCKER_LOGIN }}
+          password: ${{ secrets.DOCKER_PASS }}
 
       - name: Analyze with Docker Scout
         uses: docker/scout-action@v1.26.0

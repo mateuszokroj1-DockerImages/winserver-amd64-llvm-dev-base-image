@@ -39,7 +39,7 @@ RUN $packages = @( `
         }; `
         if (-not $installed) { throw ('Chocolatey installation failed for ' + $package.Name) } `
     }; `
-    foreach ($cache in @("$env:TEMP\chocolatey", 'C:\ProgramData\chocolatey\cache', 'C:\ProgramData\chocolatey\logs')) { `
+    foreach ($cache in @('C:\ProgramData\chocolatey\cache', 'C:\ProgramData\chocolatey\logs')) { `
         if (Test-Path -LiteralPath $cache) { Remove-Item -LiteralPath $cache -Recurse -Force } `
     }
 
@@ -55,5 +55,4 @@ WORKDIR C:\Users\ContainerUser
 RUN git clone --quiet --depth 1 https://github.com/microsoft/vcpkg.git $env:VCPKG_ROOT; `
     if ($LASTEXITCODE -ne 0) { throw 'vcpkg clone failed' }; `
     & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics; `
-    if ($LASTEXITCODE -ne 0) { throw 'vcpkg bootstrap failed' }; `
-    Remove-Item -LiteralPath (Join-Path $env:VCPKG_ROOT '.git') -Recurse -Force
+    if ($LASTEXITCODE -ne 0) { throw 'vcpkg bootstrap failed' }

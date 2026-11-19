@@ -30,21 +30,59 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v6.1.0
 
-      - name: Reclaim unused Visual Studio disk space
+      - name: Reclaim disk space and move Docker storage
         run: |
           $visualStudioRoot = 'C:\Program Files\Microsoft Visual Studio'
           if (Test-Path -LiteralPath $visualStudioRoot) {
             Get-ChildItem -LiteralPath $visualStudioRoot -Directory | ForEach-Object {
-              $installation = Join-Path $_.FullName 'Enterprise'
-              if (Test-Path -LiteralPath $installation) {
-                Write-Host "Removing unused host Visual Studio installation: $installation"
-                Remove-Item -LiteralPath $installation -Recurse -Force
+              foreach ($edition in @('Enterprise', 'Professional', 'Community', 'BuildTools')) {
+                $installation = Join-Path $_.FullName $edition
+                if (Test-Path -LiteralPath $installation) {
+                  Write-Host "Removing unused host Visual Studio installation: $installation"
+                  Remove-Item -LiteralPath $installation -Recurse -Force
+                }
               }
             }
           }
 
-          $freeSpace = (Get-PSDrive -Name C).Free
-          Write-Host ('Available C: space after cleanup: {0:N1} GiB' -f ($freeSpace / 1GB))
+          foreach ($cache in @(
+            "$env:LOCALAPPDATA\Temp",
+            "$env:LOCALAPPDATA\NuGet\v3-cache",
+            "$env:LOCALAPPDATA\pip\Cache",
+            "$env:APPDATA\npm-cache",
+            'C:\ProgramData\chocolatey\cache'
+          )) {
+            if (Test-Path -LiteralPath $cache) {
+              Remove-Item -LiteralPath $cache -Recurse -Force -ErrorAction SilentlyContinue
+            }
+          }
+
+          $dockerDataRoot = 'D:\docker'
+          New-Item -ItemType Directory -Force -Path $dockerDataRoot | Out-Null
+          $dockerConfigDir = 'C:\ProgramData\docker\config'
+          New-Item -ItemType Directory -Force -Path $dockerConfigDir | Out-Null
+          $dockerConfigPath = Join-Path $dockerConfigDir 'daemon.json'
+          $dockerConfig = @{}
+          if (Test-Path -LiteralPath $dockerConfigPath) {
+            $parsedConfig = Get-Content -LiteralPath $dockerConfigPath -Raw | ConvertFrom-Json
+            foreach ($property in $parsedConfig.PSObject.Properties) {
+              $dockerConfig[$property.Name] = $property.Value
+            }
+          }
+          $dockerConfig['data-root'] = $dockerDataRoot
+          $dockerConfig | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $dockerConfigPath -Encoding utf8
+          Restart-Service -Name docker -Force
+          $deadline = (Get-Date).AddSeconds(60)
+          do {
+            Start-Sleep -Seconds 2
+            docker info *> $null
+          } while ($LASTEXITCODE -ne 0 -and (Get-Date) -lt $deadline)
+          if ($LASTEXITCODE -ne 0) { throw 'Docker Engine did not restart with the D: data root' }
+
+          foreach ($driveName in @('C', 'D')) {
+            $freeSpace = (Get-PSDrive -Name $driveName).Free
+            Write-Host ('Available {0}: space after cleanup: {1:N1} GiB' -f $driveName, ($freeSpace / 1GB))
+          }
         shell: powershell
       
       - name: Ensure Docker Engine is running
@@ -82,6 +120,16 @@ jobs:
 
       - name: Docker build
         run: docker build --pull --tag ${{ env.tag }} .
+
+      - name: Free Docker build cache before Scout
+        run: |
+          docker builder prune --all --force
+          docker system prune --all --volumes --force
+          foreach ($driveName in @('C', 'D')) {
+            $freeSpace = (Get-PSDrive -Name $driveName).Free
+            Write-Host ('Available {0}: space before Scout: {1:N1} GiB' -f $driveName, ($freeSpace / 1GB))
+          }
+        shell: powershell
 
       - name: Analyze with Docker Scout
         uses: docker/scout-action@v1.26.0

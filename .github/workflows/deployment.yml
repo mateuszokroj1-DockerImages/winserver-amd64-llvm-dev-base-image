@@ -1,0 +1,94 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Windows Server - deployment to Docker Hub
+
+env:
+  tag: mateuszokroj1/winserver-amd64-llvm-dev-base:latest
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main", "releases/*" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: windows-2025
+
+    environment:
+      name: production
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Git checkout
+        uses: actions/checkout@v6.1.0
+
+      - name: Reclaim unused Visual Studio disk space
+        run: |
+          $visualStudioRoot = 'C:\Program Files\Microsoft Visual Studio'
+          if (Test-Path -LiteralPath $visualStudioRoot) {
+            Get-ChildItem -LiteralPath $visualStudioRoot -Directory | ForEach-Object {
+              $installation = Join-Path $_.FullName 'Enterprise'
+              if (Test-Path -LiteralPath $installation) {
+                Write-Host "Removing unused host Visual Studio installation: $installation"
+                Remove-Item -LiteralPath $installation -Recurse -Force
+              }
+            }
+          }
+
+          $freeSpace = (Get-PSDrive -Name C).Free
+          Write-Host ('Available C: space after cleanup: {0:N1} GiB' -f ($freeSpace / 1GB))
+        shell: powershell
+      
+      - name: Ensure Docker Engine is running
+        run: |
+          $service = Get-Service -Name docker -ErrorAction Stop
+          if ($service.Status -ne 'Running') {
+            Start-Service -Name docker
+          }
+
+          $deadline = (Get-Date).AddSeconds(60)
+          do {
+            $dockerInfo = docker info 2>&1
+            if ($LASTEXITCODE -eq 0) {
+              docker version
+              if ($LASTEXITCODE -ne 0) { throw 'Docker version check failed' }
+              Write-Host 'Docker Engine is ready.'
+              exit 0
+            }
+            Start-Sleep -Seconds 2
+          } while ((Get-Date) -lt $deadline)
+
+          Write-Error ($dockerInfo -join [Environment]::NewLine)
+          throw 'Docker Engine did not become ready within 60 seconds.'
+        shell: powershell
+
+      - name: Docker Login
+        # You may pin to the exact commit or the version.
+        # uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550
+        uses: docker/login-action@v4.8.0
+        with:
+            # Username used to log against the Docker registry
+            username: ${{ secrets.DOCKER_LOGIN }}
+            # Password or personal access token used to log against the Docker registry
+            password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Docker build
+        run: docker build --pull --tag ${{ env.tag }} .
+
+      - name: Analyze with Docker Scout
+        uses: docker/scout-action@v1.26.0
+        with:
+          command: cves
+          image: ${{ env.tag }}
+          exit-code: true
+
+      - name: Docker push
+        run: docker push ${{ env.tag }}

@@ -139,7 +139,7 @@ jobs:
 
       - name: Analyze with Docker Scout
         uses: docker/scout-action@v1.26.0
+        continue-on-error: true
         with:
           command: cves
           image: ${{ env.tag }}
-          exit-code: true

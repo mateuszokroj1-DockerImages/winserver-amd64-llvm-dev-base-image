@@ -139,6 +139,7 @@ jobs:
 
       - name: Analyze with Docker Scout
         uses: docker/scout-action@v1.26.0
+        timeout-minutes: 60
         continue-on-error: true
         with:
           command: cves
